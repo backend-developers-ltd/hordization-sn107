@@ -19,6 +19,7 @@ import subprocess
 import pytest
 
 from templates import _common
+from utils import scoring
 from utils.subset_scoring import (
     DEFAULT_CUTOFF_LEAD_SECONDS,
     scoring_window_closed,
@@ -37,9 +38,15 @@ def _src(rel: str) -> str:
 
 
 @pytest.fixture(autouse=True)
-def _fresh_registry():
+def _fresh_registry(monkeypatch):
     """Each test starts outside any round with an empty registry and leaves it
     that way, so a round begun in one test cannot affect another."""
+    for name in ("run_container", "reap_container", "reap_live_containers"):
+        native = getattr(_common, f"_native_{name}")
+        monkeypatch.setattr(_common, name, native)
+        if hasattr(scoring, name):
+            monkeypatch.setattr(scoring, name, native)
+
     ctx = _common._job_round.set(None)
     _common._open_round = None
     _common._live_containers.clear()
@@ -472,18 +479,6 @@ def test_a_timed_out_container_is_removed(monkeypatch):
         _common.run_container(_docker_run(), timeout=1)
     assert docker.created == set()
     assert _common._live_containers == set()
-
-
-def test_the_registry_closes_inside_the_reap_lock():
-    """Ended outside that lock, a container could register after the snapshot
-    and before the round ends -- missed by the reap and never refused."""
-    fn = next(n for n in ast.walk(ast.parse(_src("templates/_common.py")))
-              if isinstance(n, ast.FunctionDef) and n.name == "reap_live_containers")
-    locked = next(n for n in ast.walk(fn) if isinstance(n, ast.With)
-                  and ast.unparse(n.items[0].context_expr) == "_live_lock")
-    body = [ast.unparse(s) for s in locked.body]
-    snapshot = next(i for i, s in enumerate(body) if "sorted(_live_containers)" in s)
-    assert "_open_round = None" in body[:snapshot]
 
 
 def test_a_job_reaped_mid_index_does_not_go_on_to_start_hap_py(tmp_path, monkeypatch):

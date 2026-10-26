@@ -10,6 +10,8 @@ import zlib
 from pathlib import Path
 from typing import List, Optional
 
+from templates import _chsdk
+
 logger = logging.getLogger(__name__)
 
 
@@ -68,6 +70,10 @@ def _remaining(deadline: Optional[float]) -> Optional[float]:
 
 
 def run_container(cmd: List[str], **kwargs) -> subprocess.CompletedProcess:
+    return _chsdk.run_container(cmd, **kwargs)
+
+
+def _native_run_container(cmd: List[str], **kwargs) -> subprocess.CompletedProcess:
     """Run a `docker run --name ...` command the way subprocess.run would.
 
     Inside a scoring round the container is created first, registered only if
@@ -100,7 +106,7 @@ def run_container(cmd: List[str], **kwargs) -> subprocess.CompletedProcess:
         )
     except subprocess.TimeoutExpired:
         # Whether or not the daemon finished creating it, it was never started.
-        reap_container(name)
+        _native_reap_container(name)
         raise
     if created.returncode != 0:
         as_text = any(kwargs.get(k) for k in ("text", "universal_newlines", "encoding"))
@@ -113,7 +119,7 @@ def run_container(cmd: List[str], **kwargs) -> subprocess.CompletedProcess:
             _live_containers.add(name)
     if not still_open:
         # The round ended while the container was being created.
-        reap_container(name)
+        _native_reap_container(name)
         raise RegistryClosed(f"round {round_id} has ended; not starting {name}")
 
     try:
@@ -123,7 +129,7 @@ def run_container(cmd: List[str], **kwargs) -> subprocess.CompletedProcess:
         )
     except BaseException:
         # A timeout stops the attached CLI, not the container.
-        reap_container(name)
+        _native_reap_container(name)
         raise
     finally:
         release_container(name)
@@ -152,6 +158,10 @@ REAP_BUDGET_SECONDS = 20
 
 
 def reap_live_containers(budget_seconds: int = REAP_BUDGET_SECONDS) -> int:
+    return _chsdk.reap_live_containers(budget_seconds)
+
+
+def _native_reap_live_containers(budget_seconds: int = REAP_BUDGET_SECONDS) -> int:
     """Force-remove every container this process still has running.
 
     For a caller past the point where its results can still be used: the work
@@ -197,6 +207,10 @@ def reap_live_containers(budget_seconds: int = REAP_BUDGET_SECONDS) -> int:
 
 
 def reap_container(name: str) -> None:
+    return _chsdk.reap_container(name)
+
+
+def _native_reap_container(name: str) -> None:
     """Force-remove a container by name. Safe if it is already gone."""
     if not name:
         return

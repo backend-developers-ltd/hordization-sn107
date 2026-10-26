@@ -1,6 +1,6 @@
 """Hardening tests for the variant-caller templates.
 
-Every test here stubs `subprocess.run`, so no Docker image is needed. The
+Every test here stubs `run_container`, so no Docker image is needed. The
 behaviour under test is what the template does with the *result* of a docker
 run: whether it notices a failure, which container it reaps, and what resource
 limits it asked the daemon for.
@@ -96,7 +96,7 @@ class TestFreebayesCompressFailure:
         docker = _FreebayesDocker(out, compress_rc=125,
                                   compress_stderr="docker: no space left on device")
 
-        with patch("templates.freebayes.subprocess.run", side_effect=docker):
+        with patch("templates.freebayes.run_container", side_effect=docker):
             result = freebayes_call(bam, ref, out, "chr20:1-1000", {})
 
         assert result["success"] is False
@@ -109,7 +109,7 @@ class TestFreebayesCompressFailure:
         docker = _FreebayesDocker(out, compress_rc=1, compress_stderr="killed",
                                   compress_bytes=b"\x1f\x8b\x08\x00trunc")
 
-        with patch("templates.freebayes.subprocess.run", side_effect=docker):
+        with patch("templates.freebayes.run_container", side_effect=docker):
             freebayes_call(bam, ref, out, "chr20:1-1000", {})
 
         assert not out.exists()
@@ -121,7 +121,7 @@ class TestFreebayesCompressFailure:
             compress_stderr="Unable to find image 'quay.io/biocontainers/bcftools:1.20' locally",
         )
 
-        with patch("templates.freebayes.subprocess.run", side_effect=docker):
+        with patch("templates.freebayes.run_container", side_effect=docker):
             result = freebayes_call(bam, ref, out, "chr20:1-1000", {})
 
         assert result["success"] is False
@@ -138,7 +138,7 @@ class TestFreebayesCompressFailure:
                 return MagicMock(returncode=0, stderr="", stdout="")
             return docker(cmd, **kwargs)
 
-        with patch("templates.freebayes.subprocess.run", side_effect=_make_real_vcf):
+        with patch("templates.freebayes.run_container", side_effect=_make_real_vcf):
             result = freebayes_call(bam, ref, out, "chr20:1-1000", {})
 
         assert result["success"] is True
@@ -151,7 +151,7 @@ class TestFreebayesTimeoutReaping:
         bam, ref, out = _inputs(tmp_path)
         docker = _FreebayesDocker(out, compress_timeout=True)
 
-        with patch("templates.freebayes.subprocess.run", side_effect=docker), \
+        with patch("templates.freebayes.run_container", side_effect=docker), \
                 patch("templates.freebayes.reap_container") as reap:
             result = freebayes_call(bam, ref, out, "chr20:1-1000", {})
 
@@ -166,7 +166,7 @@ class TestFreebayesTimeoutReaping:
         out.write_bytes(b"")  # what the shell redirect leaves behind
 
         docker = _FreebayesDocker(out, compress_timeout=True)
-        with patch("templates.freebayes.subprocess.run", side_effect=docker), \
+        with patch("templates.freebayes.run_container", side_effect=docker), \
                 patch("templates.freebayes.reap_container"):
             freebayes_call(bam, ref, out, "chr20:1-1000", {})
 
@@ -177,7 +177,7 @@ class TestFreebayesTimeoutReaping:
         bam, ref, out = _inputs(tmp_path)
         docker = _FreebayesDocker(out, freebayes_timeout=True)
 
-        with patch("templates.freebayes.subprocess.run", side_effect=docker), \
+        with patch("templates.freebayes.run_container", side_effect=docker), \
                 patch("templates.freebayes.reap_container") as reap:
             result = freebayes_call(bam, ref, out, "chr20:1-1000", {})
 
@@ -199,7 +199,7 @@ class TestFreebayesMemoryCap:
         bam, ref, out = _inputs(tmp_path)
         docker = _FreebayesDocker(out, compress_rc=0)
 
-        with patch("templates.freebayes.subprocess.run", side_effect=docker):
+        with patch("templates.freebayes.run_container", side_effect=docker):
             freebayes_call(bam, ref, out, "chr20:1-1000", {"memory_gb": 6})
 
         assert self._memory_flag(docker.freebayes_cmd) == ["--memory=6g"]
@@ -209,7 +209,7 @@ class TestFreebayesMemoryCap:
         bam, ref, out = _inputs(tmp_path)
         docker = _FreebayesDocker(out, compress_rc=0)
 
-        with patch("templates.freebayes.subprocess.run", side_effect=docker):
+        with patch("templates.freebayes.run_container", side_effect=docker):
             freebayes_call(bam, ref, out, "chr20:1-1000", {})
 
         assert self._memory_flag(docker.freebayes_cmd)
@@ -225,7 +225,7 @@ class TestGatkHeapHeadroom:
             captured["cmd"] = list(cmd)
             return MagicMock(returncode=1, stderr="stub", stdout="")
 
-        with patch("templates.gatk.subprocess.run", side_effect=_run):
+        with patch("templates.gatk.run_container", side_effect=_run):
             gatk_call(bam, ref, out, "chr20:1-1000", config)
         return captured["cmd"]
 

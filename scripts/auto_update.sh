@@ -148,6 +148,17 @@ check_once() {
     return 0
   fi
 
+  # Match the environment selected by start-miner.sh and start-validator.sh.
+  local venv="$REPO/.venv"
+  if [[ -f /opt/minosvm_venv/bin/activate ]]; then
+    venv="/opt/minosvm_venv"
+  fi
+  log "Installing requirements into ${venv}"
+  if ! "$venv/bin/python" -m pip install -r "$REPO/requirements.txt"; then
+    log "Requirements installation failed. PM2 process was not restarted; run bash install.sh before restarting manually."
+    return 0
+  fi
+
   log "Restarting PM2 process: ${PM2_PROCESS}"
   if pm2 restart "$PM2_PROCESS" --update-env; then
     pm2 save >/dev/null 2>&1 || true

@@ -274,7 +274,7 @@ class TestSliceTruthVcf:
             result.stderr = ""
             return result
 
-        with patch("utils.scoring.subprocess.run", side_effect=fake_run), \
+        with patch("utils.scoring.run_container", side_effect=fake_run), \
              patch("pysam.tabix_index") as mock_tabix:
             assert slice_truth_vcf(source, target, "chr20:10000000-10010000")
 
@@ -297,7 +297,7 @@ class TestSliceTruthVcf:
             result.stderr = ""
             return result
 
-        with patch("utils.scoring.subprocess.run", side_effect=fake_run), \
+        with patch("utils.scoring.run_container", side_effect=fake_run), \
              patch("pysam.tabix_index") as mock_tabix:
             assert slice_truth_vcf(source, target, "chr20:10000000-10010000")
 
@@ -454,7 +454,7 @@ class TestHappyScorerCsvParsing:
 
         scorer = HappyScorer()
 
-        with patch("utils.scoring.subprocess.run", side_effect=fake_subprocess_run), \
+        with patch("utils.scoring.run_container", side_effect=fake_subprocess_run), \
              patch("utils.scoring.generate_synthetic_regions_bed", return_value=False), \
              patch("utils.scoring.slice_truth_vcf", return_value=False):
             result = scorer.score_vcf(
@@ -488,7 +488,7 @@ class TestHappyScorerCsvParsing:
 
         scorer = HappyScorer()
 
-        with patch("utils.scoring.subprocess.run", side_effect=fake_subprocess_run), \
+        with patch("utils.scoring.run_container", side_effect=fake_subprocess_run), \
              patch("utils.scoring.generate_synthetic_regions_bed", return_value=False), \
              patch("utils.scoring.slice_truth_vcf", return_value=False):
             result = scorer.score_vcf(

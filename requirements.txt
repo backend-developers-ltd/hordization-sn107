@@ -19,3 +19,4 @@ pysam>=0.21.0
 tqdm>=4.65.0
 rich>=13.0.0
 questionary>=2.0.0
+compute-horde-sdk @ git+https://github.com/backend-developers-ltd/ComputeHorde.git@b88b628dae99af888ed45710fc5d59038866c494#subdirectory=compute_horde_sdk

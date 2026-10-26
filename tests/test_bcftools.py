@@ -60,7 +60,7 @@ class TestBcftoolsCallerMode:
         """With neither caller enabled, `bcftools call` defaults to -m (not -c)."""
         bam, ref, out = self._dummy_inputs(tmp_path)
 
-        with patch("templates.bcftools.subprocess.run") as mock_run:
+        with patch("templates.bcftools.run_container") as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             variant_call(
                 bam,

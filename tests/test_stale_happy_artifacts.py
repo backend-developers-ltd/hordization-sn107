@@ -78,7 +78,7 @@ def _run(monkeypatch, workdir, *, hap_exit=0, leave_stale=False, produce=True):
             _write_artifacts(prefix)
         return _Completed(hap_exit)
 
-    monkeypatch.setattr("utils.scoring.subprocess.run", fake_run)
+    monkeypatch.setattr("utils.scoring.run_container", fake_run)
     return scorer.score_vcf(str(workdir / "truth.vcf"), str(query),
                             reference_sdf=str(workdir / "sdf"))
 
@@ -125,7 +125,7 @@ class TestStaleArtifactsAreNotScored:
             Path(f"{prefix}.summary.csv").write_text(SUMMARY)   # summary only
             return _Completed(1, stderr="hap.py died")
 
-        monkeypatch.setattr("utils.scoring.subprocess.run", fake_run)
+        monkeypatch.setattr("utils.scoring.run_container", fake_run)
         result = scorer.score_vcf(str(workdir / "truth.vcf"), str(query),
                                   reference_sdf=str(workdir / "sdf"))
         assert _refused(result), "a partial artifact set was scored"
